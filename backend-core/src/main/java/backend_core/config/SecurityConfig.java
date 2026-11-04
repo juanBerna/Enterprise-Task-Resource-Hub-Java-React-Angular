@@ -1,46 +1,58 @@
 package backend_core.config;
 
+import backend_core.security.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final JwtAuthFilter jwtAuthFilter;
+
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Deshabilitar CSRF ya que nuestra API es RESTful y stateless (usa tokens JWT)
+                // Deshabilitar CSRF (API REST stateless)
                 .csrf(csrf -> csrf.disable())
 
-                // Configurar política de sesiones como STATELESS (sin sesiones en servidor)
+                // Política de sesiones STATELESS
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Reglas de autorización de endpoints
+                // Reglas de autorización
                 .authorizeHttpRequests(auth -> auth
-                        // Documentación de OpenAPI / Swagger UI pública para facilitar pruebas y desarrollo
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-
-                        // Endpoints públicos de lectura (GET)
+                        .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/onboarding/**").permitAll()
 
-                        // Endpoints de escritura o administración protegidos (requieren autenticación JWT)
+                        // Rutas protegidas que requieren token JWT válido
                         .requestMatchers(HttpMethod.POST, "/api/v1/onboarding/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/onboarding/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/onboarding/**").authenticated()
 
-                        // Cualquier otra petición requiere autenticación por defecto
                         .anyRequest().authenticated()
                 )
 
-                // Habilitar el servidor de recursos OAuth2 validando tokens JWT
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}));
+                // Añadir nuestro filtro JWT personalizado antes del filtro de usuario/contraseña
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

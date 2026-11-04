@@ -4,7 +4,6 @@ import { BookOpen, PlusCircle, ShieldCheck, Server } from 'lucide-react';
 import { Suspense } from 'react';
 import { OnboardingResourceDto } from '@/types/onboarding';
 
-// Forzamos comportamiento dinámico
 
 // Componente interno que realiza el fetch de datos
 async function ResourcesGrid() {
@@ -103,7 +102,7 @@ export default function Home() {
               <ShieldCheck className="w-3.5 h-3.5" /> OIDC / JWT Ready
             </span>
             <Link
-              href="/onboarding/new"
+              href="/onboarding/New"
               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20"
             >
               <PlusCircle className="w-4 h-4" /> Nuevo Recurso
